@@ -1,2 +1,4 @@
 .ropeproject
 *.pyc
+/DatacenterOptimizer/*.suo
+/DatacenterOptimizer/DatacenterOptimizer/obj
