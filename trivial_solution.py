@@ -5,7 +5,9 @@ from capacity import getMinCapacity
 
 # first fit
 
-for (index, server) in enumerate(servers):
+fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
+
+for (index, server) in enumerate(fitServers):
     match = False
     location = (-1, -1)
     for (x, row) in enumerate(datacenter):
@@ -24,8 +26,8 @@ for (index, server) in enumerate(servers):
         if match:
             break
     if match:
-        server['used'] = True
-        server['pos'] = location
+        servers[server['id']]['used'] = True
+        servers[server['id']]['pos'] = location
         for i in range(server['size']):
             datacenter[location[0]][location[1] + i] = index
 
