@@ -45,7 +45,7 @@ groups = list(0 for i in range(nbgroups))
 for row in datacenter:
     for id in set(row):
         if id != Enum.EMPTY and id != Enum.UNUSED:
-            groupIndex = groups.index(min(groups))
+            _, groupIndex = getMinCapacity(datacenter, servers, nbgroups)
             groups[groupIndex] += servers[id]['capacity']
             servers[id]['group'] = groupIndex
 

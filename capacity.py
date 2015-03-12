@@ -19,17 +19,19 @@ def getMinCapacityByGroup(datacenter, servs, group):
             if serv['group'] == group and serv['pos'][0] == row :
                 currCapacity -= serv['capacity']
         minCapacity = min(minCapacity, currCapacity)
-    print "capacity of: ", group, " ", minCapacity
     return minCapacity
 
 def getMinCapacity(datacenter, servs, nbGroups):
     minCapacity = 1000
+    minGroup = None
 
     for group in range(nbGroups):
         currCapacity = getMinCapacityByGroup(datacenter, servs, group)
-        minCapacity = min(minCapacity, currCapacity)
+        if minCapacity > currCapacity:
+            minCapacity = currCapacity
+            minGroup = group
 
-    return minCapacity
+    return minCapacity, minGroup
 
 if __name__ == "__main__":
   (datacenter, servs, nbGroups) = fh.readfile("./input.txt")
