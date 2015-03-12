@@ -10,7 +10,7 @@ class Enum():
 
   UNUSED = -2
   EMPTY = -1
-    
+
 
 def readfile(file):
   with open(file, "r") as f:
