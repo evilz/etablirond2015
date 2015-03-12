@@ -26,7 +26,7 @@ def readfile(file):
      (serverSize, serverCap) = [int(x) for x in f.readline().split()]
      servers.append({'size' : serverSize, 'capacity':serverCap, 'group':-1, 'pos':(-1,-1), 'used': False})
 
-   return (datacenter, servers)
+   return (datacenter, servers, groups)
 
 def writesoluce(file, servers):
   with open(file, "w") as f:
