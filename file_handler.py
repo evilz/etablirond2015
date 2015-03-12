@@ -38,7 +38,7 @@ def writesoluce(file, servers):
         
 
 if __name__ == "__main__":
-  (dc, serv) = readfile("./test.txt")
+  (dc, serv, numGroups) = readfile("./test.txt")
   print dc
   print serv
   writesoluce('output.txt', serv)
