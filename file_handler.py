@@ -28,11 +28,17 @@ def readfile(file):
 
    return (datacenter, servers)
 
-def writesoluce(soluce):
-  pass
-
+def writesoluce(file, servers):
+  with open(file, "w") as f:
+    for serv in servers:
+      if serv['group'] == -1:
+        f.write("x\n")
+      else:
+        f.write("{} {} {}\n".format(serv['pos'][0], serv['pos'][1], serv['group']))
+        
 
 if __name__ == "__main__":
   (dc, serv) = readfile("./test.txt")
   print dc
   print serv
+  writesoluce('output.txt', serv)
