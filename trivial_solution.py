@@ -1,5 +1,6 @@
 from file_handler import Enum, readfile, writesoluce
 from capacity import getMinCapacity
+import pickle
 
 (datacenter, servers, nbgroups) = readfile("input.txt")
 
@@ -7,10 +8,14 @@ from capacity import getMinCapacity
 
 fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
 
+pickle.dump(fitServers, open("tamere", "w"))
+pickle.dump(servers, open("tasoeur", "w"))
+
 for (index, server) in enumerate(fitServers):
     match = False
     location = (-1, -1)
-    for (x, row) in enumerate(datacenter):
+    fitDatacenter = sorted(enumerate(datacenter), key=lambda x: sum(1 for i in x[1] if i == Enum.EMPTY))
+    for (x, row) in fitDatacenter:
         for (y, space) in enumerate(row):
             if space == Enum.EMPTY:
                 match = True
@@ -29,7 +34,7 @@ for (index, server) in enumerate(fitServers):
         servers[server['id']]['used'] = True
         servers[server['id']]['pos'] = location
         for i in range(server['size']):
-            datacenter[location[0]][location[1] + i] = index
+            datacenter[location[0]][location[1] + i] = server['id']
 
 # groups repartition
 
@@ -37,11 +42,12 @@ sortedServers = sorted(servers, key=lambda x: x['capacity'])
 
 groups = list(0 for i in range(nbgroups))
 
-for (index, server) in enumerate(sortedServers):
-    if server['used']:
-        groupIndex = groups.index(min(groups))
-        groups[groupIndex] += server['capacity']
-        servers[server['id']]['group'] = groupIndex
+for row in datacenter:
+    for id in set(row):
+        if id != Enum.EMPTY and id != Enum.UNUSED:
+            groupIndex = groups.index(min(groups))
+            groups[groupIndex] += servers[id]['capacity']
+            servers[id]['group'] = groupIndex
 
 writesoluce("output.txt", servers)
 
