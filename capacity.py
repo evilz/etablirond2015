@@ -19,11 +19,11 @@ def getMinCapacityByGroup(datacenter, servs, group):
             if serv['group'] == group and serv['pos'][0] == row :
                 currCapacity -= serv['capacity']
         minCapacity = min(minCapacity, currCapacity)
-
+    print "capacity of: ", group, " ", minCapacity
     return minCapacity
 
 def getMinCapacity(datacenter, servs, nbGroups):
-    minCapacity = 0
+    minCapacity = 1000
 
     for group in range(nbGroups):
         currCapacity = getMinCapacityByGroup(datacenter, servs, group)
