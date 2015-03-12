@@ -1,4 +1,4 @@
-from file_handler import Enum, readfile
+from file_handler import Enum, readfile, writesoluce
 (datacenter, servers, nbgroups) = readfile("input.txt")
 
 # first fit
@@ -33,3 +33,5 @@ for (index, server) in sortedServers:
         groupIndex = groups.index(min(groups))
         groups[groupIndex] += server['capacity']
         servers[server['index']]['group'] = groupIndex
+
+writesoluce("output.txt", servers)
