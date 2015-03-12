@@ -24,7 +24,7 @@ def readfile(file):
 #servers
    for i in range(numServers):
      (serverSize, serverCap) = [int(x) for x in f.readline().split()]
-     servers.append({'size' : serverSize, 'capacity':serverCap, 'group':-1, 'pos':(-1,-1)})
+     servers.append({'size' : serverSize, 'capacity':serverCap, 'group':-1, 'pos':(-1,-1), 'used': False})
 
    return (datacenter, servers)
 
