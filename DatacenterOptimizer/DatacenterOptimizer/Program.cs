@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -37,7 +38,7 @@ namespace DatacenterOptimizer
 
         public void SetUnavailable(int index)
         {
-            var s = new Server(1, -1, -1) { Pool = Pool.EmptyPool, Position = index };
+            var s = new Server(1, -1, -1) {Pool = Pool.EmptyPool, Position = index};
 
             Cells[index] = s;
         }
@@ -131,7 +132,7 @@ namespace DatacenterOptimizer
             Number = number;
             Capacity = capacity;
             Size = size;
-            Ratio = capacity / (double)size;
+            Ratio = capacity/(double) size;
         }
 
         public static Brush GetColor(Server s)
@@ -255,12 +256,10 @@ namespace DatacenterOptimizer
             PlacePools(parsed, sb2);
             GetMinCap(parsed, true);
 
-            var sw2 = new StreamWriter("dc.debug");
-
-            sw2.Write(sb2.ToString());
-            sw2.Close();
-
-            Console.ReadLine();
+            using (var sw2 = new StreamWriter("dc.debug"))
+            {
+                sw2.Write(sb2.ToString());
+            }
         }
 
         public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2)
@@ -275,22 +274,29 @@ namespace DatacenterOptimizer
                     break;
                 }
 
-                Tuple<Pool, Datacenter, int> res = GetMinCap(parsed);
+                Tuple<Pool, Datacenter, Bitmap> res = GetMinCap(parsed);
                 Pool selectedPool = res.Item1;
-                Server server = res.Item2.Cells.Where(s => s != null && s.Pool == null).Distinct().OrderBy(s => s.Capacity).Reverse().First();
-                
+                Server server =
+                    res.Item2.Cells.Where(s => s != null && s.Pool == null)
+                        .Distinct()
+                        .OrderBy(s => s.Capacity)
+                        .Reverse()
+                        .First();
+
                 server.Pool = selectedPool;
                 selectedPool.Capacity += server.Capacity;
                 sb2.AppendFormat("Server {0} assigned to pool {1}\r\n", server.Number, selectedPool.Number);
             }
         }
 
-        public static Tuple<Pool, Datacenter, int> GetMinCap(Tuple<Datacenter[], Server[], Pool[]> parsed, bool write = false)
+        public static Tuple<Pool, Datacenter, Bitmap> GetMinCap(Tuple<Datacenter[], Server[], Pool[]> parsed,
+            bool write = false)
         {
             Pool[] ps = parsed.Item3;
             Datacenter[] dcs = parsed.Item1;
             int globalminCap = int.MaxValue;
             Pool minPool = null;
+            Bitmap resbm = null;
 
             foreach (Pool pool in ps)
             {
@@ -315,8 +321,6 @@ namespace DatacenterOptimizer
                     minPool = pool;
                 }
             }
-
-            Console.WriteLine(globalminCap);
 
             if (globalminCap == 0)
             {
@@ -344,25 +348,52 @@ namespace DatacenterOptimizer
 
             if (write)
             {
+                Console.WriteLine(globalminCap);
                 var sb = new StringBuilder();
-                var sw = new StreamWriter("dc_" + globalminCap + ".out");
 
-                foreach (var server in parsed.Item2)
+                using (var sw = new StreamWriter("dc_" + globalminCap + ".out"))
                 {
-                    sb.AppendLine(server.ToString());
+                    foreach (var server in parsed.Item2)
+                    {
+                        sb.AppendLine(server.ToString());
+                    }
+
+                    sw.Write(sb.ToString());
                 }
 
-                sw.Write(sb.ToString());
-                sw.Close();
+                int width = dcs[0].Cells.Length*10, height = dcs.Length*10;
+
+                resbm = new Bitmap(width, height);
+
+                using (Graphics graphics = Graphics.FromImage(resbm))
+                {
+                    graphics.FillRectangle(Brushes.Black, 0, 0, resbm.Width, resbm.Height);
+
+                    for (int i = 0; i < parsed.Item1.Length; i++)
+                    {
+                        Datacenter datacenter = parsed.Item1[i];
+                        List<Server> servers = datacenter.Cells.Distinct().ToList();
+
+                        for (int j = 0; j < servers.Count; j++)
+                        {
+                            var server = servers[j];
+
+                            graphics.FillRectangle(Server.GetColor(server), server.Position*10, i*10, 10*server.Size, 10);
+                        }
+                    }
+                }
+
+                resbm.Save("Visu_" + globalminCap + ".png", ImageFormat.Png);
             }
 
-            return Tuple.Create(minPool, dcres /*dcMinPool*/, globalminCap);
+            return Tuple.Create(minPool, dcres /*dcMinPool*/, resbm);
         }
 
         public static Tuple<Datacenter[], Server[], Pool[]> Parse()
         {
             var sr = new StreamReader("dc.in");
-            string[] inputs = sr.ReadToEnd().Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            string[] inputs = sr.ReadToEnd()
+                .Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             int index = 0;
             string input = inputs[index++];
             string[] data = input.Split();
@@ -404,7 +435,9 @@ namespace DatacenterOptimizer
                 int y = int.Parse(data[1]);
                 servers[i] = new Server(x, y, i);
             }
+
             sr.Close();
+
             return Tuple.Create(datacenters, servers, pools);
         }
 
@@ -437,7 +470,8 @@ namespace DatacenterOptimizer
 
             // Preparse
             var sr2 = new StreamReader("placement.in");
-            string[] inputs = sr2.ReadToEnd().Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            string[] inputs = sr2.ReadToEnd()
+                .Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             int index = 0;
 
             foreach (var server in tuple.Item2)
