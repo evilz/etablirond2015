@@ -1,6 +1,6 @@
 //#define DEBUG
 //#define PLACEMENT
-//#define BITMAP
+#define BITMAP
 
 using System;
 using System.Collections.Generic;
@@ -265,12 +265,16 @@ namespace DatacenterOptimizer
 
             PlaceServers(parsed, sb2);
 
-            for (int i = 0; i < 1000; i++)
+            for (int j = 350; j < 450; j++)
             {
-                ClearData(parsed);
-                PlacePools(parsed, sb2);
-                GetMinCap(parsed, true);
-                //Console.ReadLine();
+                Console.WriteLine("j = {0}", j);
+                for (int i = 0; i < 10; i++)
+                {
+                    ClearData(parsed);
+                    PlacePools(parsed, sb2, j);
+                    GetMinCap(parsed, true);
+                    //Console.ReadLine();
+                }
             }
 
 #if DEBUG
@@ -294,12 +298,12 @@ namespace DatacenterOptimizer
             }
         }
 
-        public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2)
+        public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2, int limit)
         {
             // Place pools
             foreach (var pool in parsed.Item3)
             {
-                while (pool.Capacity < 300)
+                while (pool.Capacity < limit)
                 {
                     Server server =
                         parsed.Item2.Where(
