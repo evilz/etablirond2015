@@ -270,6 +270,7 @@ namespace DatacenterOptimizer
                 ClearData(parsed);
                 PlacePools(parsed, sb2);
                 GetMinCap(parsed, true);
+                //Console.ReadLine();
             }
 
 #if DEBUG
@@ -539,10 +540,57 @@ namespace DatacenterOptimizer
             }
 #endif
 
+            // PKI
+            int allCap = tuple.Item2.Sum(s => s.Capacity);
+            int allSize = tuple.Item2.Sum(s => s.Size);
+
+            Console.WriteLine("Global count: {0}", tuple.Item2.Length);
+            Console.WriteLine("Global capacity: {0}", allCap);
+            Console.WriteLine("Global size: {0}", allSize);
+            Console.WriteLine("Global ratio: {0}", allCap / (double)allSize);
+
+
+            var taken = tuple.Item2.Where(s => s.Datacenter != null).ToArray();
+            int takenCap = taken.Sum(s => s.Capacity);
+            int takenSize = taken.Sum(s => s.Size);
+
+            Console.WriteLine("Taken count: {0}", taken.Length);
+            Console.WriteLine("Taken capacity: {0}", takenCap);
+            Console.WriteLine("Taken size: {0}", takenSize);
+            Console.WriteLine("Taken ratio: {0}", takenCap / (double)takenSize);
+
             for (int i = 0; i < tuple.Item3.Length; i++)
             {
                 tuple.Item3[i] = new Pool(i);
             }
+
+            var ordered = tuple.Item2/*.Where(s => s.Capacity <= 90)*/.OrderBy(s => s.Ratio).Reverse().ToArray();
+            var maxRatio = new List<Server>();
+            int counter = takenSize;
+
+            foreach (Server server in ordered)
+            {
+                if (counter == 0)
+                {
+                    break;
+                }
+                
+                if (server.Size > counter)
+                {
+                    continue;
+                }
+
+                maxRatio.Add(server);
+                counter -= server.Size;
+            }
+
+            int maxCap = maxRatio.Sum(s => s.Capacity);
+            int maxSize = maxRatio.Sum(s => s.Size);
+
+            Console.WriteLine("MaxRatio count: {0}", maxRatio.Count);
+            Console.WriteLine("MaxRatio capacity: {0}", maxCap);
+            Console.WriteLine("MaxRatio size: {0}", maxSize);
+            Console.WriteLine("MaxRatio ratio: {0}", maxCap / (double)maxSize);
         }
     }
 
