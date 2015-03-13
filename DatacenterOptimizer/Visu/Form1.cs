@@ -24,7 +24,7 @@ namespace Visu
             var sb2 = new StringBuilder();
 
             _data = DatacenterOptimizer.Program.Parse();
-            DatacenterOptimizer.Program.PlaceServers(_data);
+            DatacenterOptimizer.Program.PlaceServers(_data, sb2);
             DatacenterOptimizer.Program.PlacePools(_data, sb2);
             DatacenterOptimizer.Program.GetMinCap(_data.Item1, _data.Item3);
             int width = _data.Item1[0].Cells.Length * 10, height = _data.Item1.Length * 10;
@@ -32,6 +32,7 @@ namespace Visu
             Controls.Add(pictureBox1);
             _flag = new Bitmap(width, height);
             _flagGraphics = Graphics.FromImage(_flag);
+            _flagGraphics.FillRectangle(Brushes.Black, 0, 0, width, height);
 
             new Thread(() =>
             {
@@ -42,14 +43,13 @@ namespace Visu
                     for (int j = 0; j < servers.Count; j++)
                     {
                         var server = servers[j];
-                        _flagGraphics.FillRectangle(Server.GetColor(server), server.Position * 10, i * 10, 10 * server.Size, 10);
                         try
                         {
+                            _flagGraphics.FillRectangle(Server.GetColor(server), server.Position * 10, i * 10, 10 * server.Size, 10);
                             pictureBox1.Image = _flag;
                         }
                         catch (Exception)
                         {
-
                         }
                         Thread.Sleep(1);
                     }
