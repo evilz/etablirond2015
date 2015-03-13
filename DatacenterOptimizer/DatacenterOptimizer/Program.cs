@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DatacenterOptimizer
 {
@@ -297,30 +298,37 @@ namespace DatacenterOptimizer
             int globalminCap = int.MaxValue;
             Pool minPool = null;
             Bitmap resbm = null;
+            //object locker = new object();
 
-            foreach (Pool pool in ps)
+            Parallel.ForEach(ps, pool =>
             {
                 int minCap = int.MaxValue;
 
-                foreach (Datacenter datacenter in dcs)
+                Parallel.ForEach(dcs, datacenter =>
                 {
                     var cap = dcs.Where(dc => dc != datacenter).Sum(
                         dc =>
                             dc.Cells.Where(s => s != null && s.Pool == pool)
                                 .Distinct()
                                 .Sum(s => s.Capacity));
-                    if (minCap > cap)
+                    //lock (locker)
                     {
-                        minCap = cap;
+                        if (minCap > cap)
+                        {
+                            minCap = cap;
+                        }
                     }
-                }
+                });
 
-                if (globalminCap > minCap)
+                //lock (locker)
                 {
-                    globalminCap = minCap;
-                    minPool = pool;
+                    if (globalminCap > minCap)
+                    {
+                        globalminCap = minCap;
+                        minPool = pool;
+                    }  
                 }
-            }
+            });
 
             if (globalminCap == 0)
             {
@@ -367,7 +375,7 @@ namespace DatacenterOptimizer
 
                 using (Graphics graphics = Graphics.FromImage(resbm))
                 {
-                    graphics.FillRectangle(Brushes.Black, 0, 0, resbm.Width, resbm.Height);
+                    graphics.FillRectangle(Brushes.Black, 0, 0, width, height);
 
                     for (int i = 0; i < parsed.Item1.Length; i++)
                     {
