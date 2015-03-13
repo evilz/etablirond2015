@@ -1,6 +1,6 @@
 //#define DEBUG
 //#define PLACEMENT
-//#define BITMAP
+#define BITMAP
 
 using System;
 using System.Collections.Generic;
@@ -265,7 +265,7 @@ namespace DatacenterOptimizer
 
             PlaceServers(parsed, sb2);
 
-            for (int j = 360; j < 445; j++)
+            for (int j = 350; j < 450; j++)
             {
                 Console.WriteLine("j = {0}", j);
                 for (int i = 0; i < 10; i++)
@@ -338,8 +338,7 @@ namespace DatacenterOptimizer
                 Server server =
                     res.Item2.Cells.Where(s => s != null && s.Pool == null)
                         .Distinct()
-                        .OrderBy(s => s.Capacity)
-                        .Reverse()
+                        .OrderByDescending(s => s.Capacity)
                         .First();
 
                 server.Pool = selectedPool;
@@ -356,9 +355,9 @@ namespace DatacenterOptimizer
             Console.WriteLine("Rest count: {0}", rest.Length);
             Console.WriteLine("Rest capacity: {0}", takenCap);
             Console.WriteLine("Rest size: {0}", takenSize);
-            Console.WriteLine("Rest ratio: {0}", takenCap/(double) takenSize);
-            DumpPoolStatus(parsed);
-            Console.ReadLine();*/
+            Console.WriteLine("Rest ratio: {0}", takenCap/(double) takenSize);*/
+            //DumpPoolStatus(parsed);
+            //Console.ReadLine();
         }
 
         public static void DumpPoolStatus(Tuple<Datacenter[], Server[], Pool[]> parsed)
@@ -370,14 +369,14 @@ namespace DatacenterOptimizer
 
             foreach (var datacenter in parsed.Item1)
             {
-                Console.WriteLine("Datacenter {0}:", datacenter.Number);
-
+                Console.WriteLine("Rangée {0}: {1}", datacenter.Number, datacenter.Cells.Where(s => s != null && s.Datacenter != null).Distinct().Sum(s => s.Capacity));
+                /*
                 foreach (var pool in parsed.Item3)
                 {
                     Console.WriteLine("\tPool {0}: {1}", pool.Number, datacenter.Cells.Where(s=>s.Pool == pool).Distinct().Sum(s => s.Capacity));
                 }
 
-                Console.ReadLine();
+                Console.ReadLine();*/
             }
         }
 

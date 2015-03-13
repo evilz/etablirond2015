@@ -6,22 +6,24 @@ import pickle
 
 # first fit
 
-#tmpServers = sorted(servers, key=lambda x: x['capacity'], reverse=True)[2:]
 fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
 
-pickle.dump(fitServers, open("tamere", "w"))
-pickle.dump(servers, open("tasoeur", "w"))
+#pickle.dump(fitServers, open("tamere", "w"))
+#pickle.dump(servers, open("tasoeur", "w"))
+datacenterIndexer = 0
 
 for (index, server) in enumerate(fitServers):
     match = False
     location = (-1, -1)
-    #fitDatacenter = sorted(enumerate(datacenter), key=lambda x: sum((float)(servers[i]['capacity']) / (float)(servers[i]['size']) for i in set(x[1]) if i == Enum.EMPTY))
-    for (x, row) in enumerate(datacenter):#fitDatacenter:
+    i = 0
+    while i < len(datacenter):
+        i += 1
+        x = datacenterIndexer%len(datacenter)
+        row = datacenter[datacenterIndexer%len(datacenter)]
+        datacenterIndexer += 1
         for (y, space) in enumerate(row):
             if space == Enum.EMPTY:
                 match = True
-                bestY = None
-                bestSize = 1000
                 for j in range(server['size']):
                     if y + j < len(row):
                         if row[y + j] != Enum.EMPTY:
