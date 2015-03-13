@@ -1,6 +1,6 @@
 //#define DEBUG
 //#define PLACEMENT
-#define BITMAP
+//#define BITMAP
 
 using System;
 using System.Collections.Generic;
@@ -265,7 +265,7 @@ namespace DatacenterOptimizer
 
             PlaceServers(parsed, sb2);
 
-            for (int j = 350; j < 450; j++)
+            for (int j = 360; j < 445; j++)
             {
                 Console.WriteLine("j = {0}", j);
                 for (int i = 0; i < 10; i++)

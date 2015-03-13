@@ -6,8 +6,8 @@ import pickle
 
 # first fit
 
-tmpServers = sorted(servers, key=lambda x: x['capacity'], reverse=True)[5:]
-fitServers = sorted(tmpServers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
+#tmpServers = sorted(servers, key=lambda x: x['capacity'], reverse=True)[2:]
+fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
 
 pickle.dump(fitServers, open("tamere", "w"))
 pickle.dump(servers, open("tasoeur", "w"))
@@ -15,8 +15,8 @@ pickle.dump(servers, open("tasoeur", "w"))
 for (index, server) in enumerate(fitServers):
     match = False
     location = (-1, -1)
-    fitDatacenter = sorted(enumerate(datacenter), key=lambda x: sum((float)(servers[i]['capacity']) / (float)(servers[i]['size']) for i in set(x[1]) if i == Enum.EMPTY))
-    for (x, row) in fitDatacenter:
+    #fitDatacenter = sorted(enumerate(datacenter), key=lambda x: sum((float)(servers[i]['capacity']) / (float)(servers[i]['size']) for i in set(x[1]) if i == Enum.EMPTY))
+    for (x, row) in enumerate(datacenter):#fitDatacenter:
         for (y, space) in enumerate(row):
             if space == Enum.EMPTY:
                 match = True
@@ -50,6 +50,6 @@ for row in datacenter:
             groups[groupIndex] += servers[id]['capacity']
             servers[id]['group'] = groupIndex
 
-writesoluce("output.txt", servers)
+writesoluce("DatacenterOptimizer\DatacenterOptimizer\placement.in", servers)
 
 print getMinCapacity(datacenter, servers, nbgroups)
