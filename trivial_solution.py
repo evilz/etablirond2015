@@ -6,7 +6,7 @@ import pickle
 
 # first fit
 
-tmpServers = sorted(servers, key=lambda x: x['capacity'])[5:]
+tmpServers = sorted(servers, key=lambda x: x['capacity'], reverse=True)[5:]
 fitServers = sorted(tmpServers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
 
 pickle.dump(fitServers, open("tamere", "w"))
