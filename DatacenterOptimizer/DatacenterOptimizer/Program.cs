@@ -297,6 +297,29 @@ namespace DatacenterOptimizer
         public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2)
         {
             // Place pools
+            foreach (var pool in parsed.Item3)
+            {
+                while (pool.Capacity < 300)
+                {
+                    Server server =
+                        parsed.Item2.Where(
+                            s =>
+                                s != null && s.Pool == null && s.Datacenter != null &&
+                                s.Datacenter.Cells.All(s2 => s2.Pool != pool))
+                            .OrderByDescending(s => s.Capacity)
+                            .FirstOrDefault();
+
+                    if (server == null)
+                    {
+                        break;
+                    }
+
+                    server.Pool = pool;
+                    pool.Capacity += server.Capacity;
+                }
+            }
+
+            
             while (true)
             {
                 var availableServers = parsed.Item2.Where(s => s != null && s.Pool == null && s.Datacenter != null);
@@ -320,6 +343,37 @@ namespace DatacenterOptimizer
 #if DEBUG
                 sb2.AppendFormat("Server {0} assigned to pool {1}\r\n", server.Number, selectedPool.Number);
 #endif
+            }
+            /*
+            var rest = parsed.Item2.Where(s => s.Datacenter != null && s.Pool == null).ToArray();
+            int takenCap = rest.Sum(s => s.Capacity);
+            int takenSize = rest.Sum(s => s.Size);
+
+            Console.WriteLine("Rest count: {0}", rest.Length);
+            Console.WriteLine("Rest capacity: {0}", takenCap);
+            Console.WriteLine("Rest size: {0}", takenSize);
+            Console.WriteLine("Rest ratio: {0}", takenCap/(double) takenSize);
+            DumpPoolStatus(parsed);
+            Console.ReadLine();*/
+        }
+
+        public static void DumpPoolStatus(Tuple<Datacenter[], Server[], Pool[]> parsed)
+        {
+            foreach (var pool in parsed.Item3)
+            {
+                Console.WriteLine("Pool {0}: {1}", pool.Number, pool.Capacity);
+            }
+
+            foreach (var datacenter in parsed.Item1)
+            {
+                Console.WriteLine("Datacenter {0}:", datacenter.Number);
+
+                foreach (var pool in parsed.Item3)
+                {
+                    Console.WriteLine("\tPool {0}: {1}", pool.Number, datacenter.Cells.Where(s=>s.Pool == pool).Distinct().Sum(s => s.Capacity));
+                }
+
+                Console.ReadLine();
             }
         }
 
