@@ -2,3 +2,7 @@
 *.pyc
 /DatacenterOptimizer/*.suo
 /DatacenterOptimizer/DatacenterOptimizer/obj
+/DatacenterOptimizer/Visu/bin/Debug
+/DatacenterOptimizer/Visu/bin/Release
+/DatacenterOptimizer/DatacenterOptimizer/bin
+/DatacenterOptimizer/Visu/obj
