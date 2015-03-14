@@ -7,9 +7,6 @@ import pickle
 # first fit
 
 fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
-
-#pickle.dump(fitServers, open("tamere", "w"))
-#pickle.dump(servers, open("tasoeur", "w"))
 datacenterIndexer = 0
 
 for (index, server) in enumerate(fitServers):

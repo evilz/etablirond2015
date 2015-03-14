@@ -1,6 +1,6 @@
 //#define DEBUG
 //#define PLACEMENT
-#define BITMAP
+//#define BITMAP
 
 using System;
 using System.Collections.Generic;
@@ -265,10 +265,10 @@ namespace DatacenterOptimizer
 
             PlaceServers(parsed, sb2);
 
-            for (int j = 350; j < 450; j++)
+            for (int j = 390; j < 410; j++)
             {
                 Console.WriteLine("j = {0}", j);
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 20; i++)
                 {
                     ClearData(parsed);
                     PlacePools(parsed, sb2, j);
@@ -388,6 +388,7 @@ namespace DatacenterOptimizer
             int globalminCap = int.MaxValue;
             Pool minPool = null;
             Bitmap resbm = null;
+            int sum = 0;
             //object locker = new object();
 
             Parallel.ForEach(ps, pool =>
@@ -412,6 +413,7 @@ namespace DatacenterOptimizer
 
                 //lock (locker)
                 {
+                    sum += minCap;
                     if (globalminCap > minCap)
                     {
                         globalminCap = minCap;
@@ -446,10 +448,11 @@ namespace DatacenterOptimizer
 
             if (write)
             {
-                Console.WriteLine(globalminCap);
+                float maxTheorical = sum/45f;
+                Console.WriteLine("{0} {1}", globalminCap, maxTheorical);
                 var sb = new StringBuilder();
 
-                using (var sw = new StreamWriter("dc_" + globalminCap + ".out"))
+                using (var sw = new StreamWriter(string.Format("dc_{0}.out", globalminCap)))
                 {
                     foreach (var server in parsed.Item2)
                     {
@@ -459,6 +462,10 @@ namespace DatacenterOptimizer
                     sw.Write(sb.ToString());
                 }
 
+                if (maxTheorical > 419)
+                {
+                    Console.ReadLine();
+                }
 #if BITMAP
                 int width = dcs[0].Cells.Length*10, height = dcs.Length*10;
 
