@@ -1,5 +1,5 @@
 from file_handler import Enum, readfile, writesoluce
-from capacity import getMinCapacity, getNextToFit
+from capacity import getMinCapacity
 
 (datacenter, servers, nbgroups) = readfile("input.txt")
 
@@ -36,17 +36,13 @@ for server in fitServers:
         for i in range(server['size']):
             datacenter[location[0]][location[1] + i] = server['id']
 
-# groups repartition
-# fuse
-#for server in fitServers:
-#    if server['used']:
-#        server['group'] = 0
-        
+# groups repartition        
 groups = list(0 for i in range(nbgroups))
 
+# fill each group with biggest capacities first until limit
 for groupIndex in range(nbgroups):
     rowList = list()
-    while groups[groupIndex] < 410:
+    while groups[groupIndex] < 410: #limit
         for server in capServers:
             if server['used'] and server['group'] == -1 and server['datacenter'] not in rowList:
                 selectedServer = server
@@ -55,9 +51,32 @@ for groupIndex in range(nbgroups):
         groups[groupIndex] += selectedServer['capacity']
         selectedServer['group'] = groupIndex
         rowList.append(selectedServer['datacenter'])
-        #print "Server {} assigned to pool {}".format(selectedServer['id'], groupIndex)
-         
+
+def getNextToFit(datacenter, servs, groups):
+    (minCapacity, minGroup, maxTheorical) = getMinCapacity(datacenter, servs, len(groups))
+    
+    #if minCapacity == 0:
+    #    minGroup = groups.index(min(groups));
+    
+    # Extract biggest server from a row we are not in
+    maxCap = 0
+    for row in datacenter:
+        biggestServerInCapDc = None
+        maxCapInDc = 0
+        for id in set(row):
+            if id != Enum.EMPTY and id != Enum.UNUSED:
+                if servs[id]['group'] == -1 and servs[id]['capacity'] > maxCapInDc:
+                    biggestServerInCapDc = id
+                    maxCapInDc = servs[id]['capacity']
+                        
+        if maxCap < maxCapInDc and biggestServerInCapDc != None:
+            biggestServerInCap = biggestServerInCapDc
+            maxCap = maxCapInDc
+            
+    return minGroup, biggestServerInCap
+
 while True:
+    # if not available server, break
     needToBreak = True
     for server in fitServers:
         if server['used'] and server['group'] == -1:
@@ -66,11 +85,11 @@ while True:
 
     if needToBreak:
         break
-        
+
+    # get next server and group to fit
     (groupId, serverId) = getNextToFit(datacenter, servers, groups)
     groups[groupId] += servers[serverId]['capacity']
     servers[serverId]['group'] = groupId
-    #print "Server {} assigned to pool {}".format(serverId, groupId)
 
 writesoluce("DatacenterOptimizer\DatacenterOptimizer\placement.in", servers)
 

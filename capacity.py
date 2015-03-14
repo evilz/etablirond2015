@@ -35,31 +35,6 @@ def getMinCapacity(datacenter, servs, nbGroups):
             
     return minCapacity, minGroup, sum/45
 
-def getNextToFit(datacenter, servs, groups):
-    (minCapacity, minGroup, maxTheorical) = getMinCapacity(datacenter, servs, len(groups))
-    
-    #if minCapacity == 0:
-    #    minGroup = groups.index(min(groups));
-    
-    minCapDc = 10000
-    cap = 0
-    for (x, row) in enumerate(datacenter):
-        localServer = None
-        maxCap = 0
-        for id in set(row):
-            if id != fh.Enum.EMPTY and id != fh.Enum.UNUSED:
-                if servs[id]['group'] == minGroup:
-                    cap += servs[id]['capacity']
-                elif servs[id]['group'] == -1 and servs[id]['capacity'] > maxCap:
-                    localServer = id
-                    maxCap = servs[id]['capacity']
-                        
-        if cap < minCapDc and localServer != None:
-            res = localServer
-            minCapDc = cap
-            
-    return minGroup, res
-
 if __name__ == "__main__":
   (datacenter, servs, nbGroups) = fh.readfile("./input.txt")
   print getMinCapacity(datacenter, servs, nbGroups)
