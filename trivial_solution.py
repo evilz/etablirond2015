@@ -1,6 +1,5 @@
 from file_handler import Enum, readfile, writesoluce
 from capacity import getMinCapacity
-import pickle
 
 (datacenter, servers, nbgroups) = readfile("input.txt")
 
