@@ -6,17 +6,14 @@ from capacity import getMinCapacity
 # first fit
 
 fitServers = sorted(servers, key=lambda x: (float)(x['size']) / (float)(x['capacity']))
-datacenterIndexer = 0
 
-for (index, server) in enumerate(fitServers):
+for server in fitServers:
     match = False
     location = (-1, -1)
+    fitRows = sorted(enumerate(datacenter), key=(lambda x: sum(servers[i]['capacity'] for i in set(x[1]) if i != Enum.EMPTY and i != Enum.UNUSED)))
     i = 0
-    while i < len(datacenter):
+    for (x, row) in fitRows:
         i += 1
-        x = datacenterIndexer%len(datacenter)
-        row = datacenter[datacenterIndexer%len(datacenter)]
-        datacenterIndexer += 1
         for (y, space) in enumerate(row):
             if space == Enum.EMPTY:
                 match = True
