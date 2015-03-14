@@ -268,7 +268,7 @@ namespace DatacenterOptimizer
             for (int j = 390; j < 410; j++)
             {
                 Console.WriteLine("j = {0}", j);
-                for (int i = 0; i < 20; i++)
+                for (int i = 0; i < 50; i++)
                 {
                     ClearData(parsed);
                     PlacePools(parsed, sb2, j);
@@ -309,21 +309,20 @@ namespace DatacenterOptimizer
                         parsed.Item2.Where(
                             s =>
                                 s != null && s.Pool == null && s.Datacenter != null &&
-                                s.Datacenter.Cells.All(s2 => s2.Pool != pool))
+                                s.Datacenter.Cells.All(s2 => s2 != null && s2.Pool != pool))
                             .OrderByDescending(s => s.Capacity)
                             .FirstOrDefault();
 
                     if (server == null)
-                    {
                         break;
-                    }
 
                     server.Pool = pool;
                     pool.Capacity += server.Capacity;
+
+                    //Console.WriteLine("Server {0} assigned to pool {1}", server.Number, pool.Number);
                 }
             }
 
-            
             while (true)
             {
                 var availableServers = parsed.Item2.Where(s => s != null && s.Pool == null && s.Datacenter != null);
@@ -333,29 +332,17 @@ namespace DatacenterOptimizer
                     break;
                 }
 
-                Tuple<Pool, Datacenter, Bitmap> res = GetMinCap(parsed);
+                Tuple<Pool, Server, Bitmap> res = GetMinCap(parsed);
                 Pool selectedPool = res.Item1;
-                Server server =
-                    res.Item2.Cells.Where(s => s != null && s.Pool == null)
-                        .Distinct()
-                        .OrderByDescending(s => s.Capacity)
-                        .First();
+                Server server = res.Item2;
 
                 server.Pool = selectedPool;
                 selectedPool.Capacity += server.Capacity;
+                //Console.WriteLine("Server {0} assigned to pool {1}", server.Number, selectedPool.Number);
 #if DEBUG
                 sb2.AppendFormat("Server {0} assigned to pool {1}\r\n", server.Number, selectedPool.Number);
 #endif
             }
-            /*
-            var rest = parsed.Item2.Where(s => s.Datacenter != null && s.Pool == null).ToArray();
-            int takenCap = rest.Sum(s => s.Capacity);
-            int takenSize = rest.Sum(s => s.Size);
-
-            Console.WriteLine("Rest count: {0}", rest.Length);
-            Console.WriteLine("Rest capacity: {0}", takenCap);
-            Console.WriteLine("Rest size: {0}", takenSize);
-            Console.WriteLine("Rest ratio: {0}", takenCap/(double) takenSize);*/
             //DumpPoolStatus(parsed);
             //Console.ReadLine();
         }
@@ -380,7 +367,7 @@ namespace DatacenterOptimizer
             }
         }
 
-        public static Tuple<Pool, Datacenter, Bitmap> GetMinCap(Tuple<Datacenter[], Server[], Pool[]> parsed,
+        public static Tuple<Pool, Server, Bitmap> GetMinCap(Tuple<Datacenter[], Server[], Pool[]> parsed,
             bool write = false)
         {
             Pool[] ps = parsed.Item3;
@@ -433,17 +420,22 @@ namespace DatacenterOptimizer
                 dcs.Where(dc => dc.Cells.Any(s => s != null && s.Pool == null))
                     .ToDictionary(dc => dc,
                         dc => dc.Cells.Where(s => s != null && s.Pool == minPool).Distinct().Sum(s => s.Capacity));
-            Datacenter dcres;
+            Server res;
 
             if (!tmp.Any())
             {
-                dcres = null;
+                res = null;
             }
             else
             {
                 int min = tmp.Min(p => p.Value);
 
-                dcres = tmp.Where(p => p.Value == min).Random().Key;
+                Datacenter dcres = tmp.Where(p => p.Value == min).Random().Key;
+                res =
+                    dcres.Cells.Where(s => s != null && s.Pool == null)
+                        .Distinct()
+                        .OrderByDescending(s => s.Capacity)
+                        .First();
             }
 
             if (write)
@@ -452,7 +444,7 @@ namespace DatacenterOptimizer
                 Console.WriteLine("{0} {1}", globalminCap, maxTheorical);
                 var sb = new StringBuilder();
 
-                using (var sw = new StreamWriter(string.Format("dc_{0}.out", globalminCap)))
+                using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, Math.Truncate(maxTheorical))))
                 {
                     foreach (var server in parsed.Item2)
                     {
@@ -462,10 +454,6 @@ namespace DatacenterOptimizer
                     sw.Write(sb.ToString());
                 }
 
-                if (maxTheorical > 419)
-                {
-                    Console.ReadLine();
-                }
 #if BITMAP
                 int width = dcs[0].Cells.Length*10, height = dcs.Length*10;
 
@@ -493,7 +481,7 @@ namespace DatacenterOptimizer
 #endif
             }
 
-            return Tuple.Create(minPool, dcres /*dcMinPool*/, resbm);
+            return Tuple.Create(minPool, res /*dcMinPool*/, resbm);
         }
 
         public static Tuple<Datacenter[], Server[], Pool[]> Parse()
@@ -627,34 +615,6 @@ namespace DatacenterOptimizer
             {
                 tuple.Item3[i] = new Pool(i);
             }
-
-            var ordered = tuple.Item2/*.Where(s => s.Capacity <= 90)*/.OrderBy(s => s.Ratio).Reverse().ToArray();
-            var maxRatio = new List<Server>();
-            int counter = takenSize;
-
-            foreach (Server server in ordered)
-            {
-                if (counter == 0)
-                {
-                    break;
-                }
-                
-                if (server.Size > counter)
-                {
-                    continue;
-                }
-
-                maxRatio.Add(server);
-                counter -= server.Size;
-            }
-
-            int maxCap = maxRatio.Sum(s => s.Capacity);
-            int maxSize = maxRatio.Sum(s => s.Size);
-
-            Console.WriteLine("MaxRatio count: {0}", maxRatio.Count);
-            Console.WriteLine("MaxRatio capacity: {0}", maxCap);
-            Console.WriteLine("MaxRatio size: {0}", maxSize);
-            Console.WriteLine("MaxRatio ratio: {0}", maxCap / (double)maxSize);
         }
     }
 
