@@ -1,6 +1,7 @@
 //#define DEBUG
-//#define PLACEMENT
+#define PLACEMENT
 //#define BITMAP
+#define EQUILIBRATE
 
 using System;
 using System.Collections.Generic;
@@ -29,12 +30,11 @@ namespace DatacenterOptimizer
 
     public class Datacenter
     {
-        public static KeyValuePair<int, int> EmptyChunk = new KeyValuePair<int, int>(-1, -1);
         public readonly Server[] Cells;
         public Dictionary<int, int> Chunks;
         public Pool Pool;
-        public KeyValuePair<int, int> ChunkMax;
         public int Number;
+        public int Capacity;
 
         public Datacenter(int size, int number)
         {
@@ -56,7 +56,6 @@ namespace DatacenterOptimizer
 
             int counter = 0;
             int counterStart = 0;
-            int counterMax = 0;
             int index = 0;
 
             foreach (Server server in Cells)
@@ -70,11 +69,6 @@ namespace DatacenterOptimizer
                     if (counter != 0)
                     {
                         Chunks.Add(counterStart, counter);
-
-                        if (counterMax < counter)
-                        {
-                            counterMax = counter;
-                        }
                     }
 
                     counterStart = index + 1;
@@ -87,44 +81,19 @@ namespace DatacenterOptimizer
             if (counter != 0)
             {
                 Chunks.Add(counterStart, counter);
-
-                if (counterMax < counter)
-                {
-                    counterMax = counter;
-                }
             }
-
-            ChunkMax = counterMax == 0 ? EmptyChunk : Chunks.First(p => p.Value == counterMax);
-        }
-
-        public void SetServer(Server s)
-        {
-            s.Datacenter = this;
-            s.Position = ChunkMax.Key;
-
-            for (int i = 0; i < s.Size; i++)
-            {
-                Cells[ChunkMax.Key + i] = s;
-            }
-
-#if PLACEMENT
-            ComputeChunks();
-#endif
         }
 
         public void SetServer(Server s, int pos)
         {
             s.Datacenter = this;
             s.Position = pos;
+            Capacity += s.Capacity;
 
             for (int i = 0; i < s.Size; i++)
             {
                 Cells[pos + i] = s;
             }
-            
-#if PLACEMENT
-            ComputeChunks();
-#endif
         }
     }
 
@@ -263,17 +232,23 @@ namespace DatacenterOptimizer
             var sb2 = new StringBuilder();
             Tuple<Datacenter[], Server[], Pool[]> parsed = Parse();
 
-            PlaceServers(parsed, sb2);
-
-            for (int j = 390; j < 430; j++)
+            for (int i = 0; i < 2; i++)
             {
-                Console.WriteLine("j = {0}", j);
-                for (int i = 0; i < 2; i++)
+#if PLACEMENT
+                ClearData(parsed, true);
+#endif
+                PlaceServers(parsed, sb2);
+
+                for (int j = 390; j < 440; j++)
                 {
-                    ClearData(parsed);
-                    PlacePools(parsed, sb2, j);
-                    GetMinCap(parsed, true);
-                    //Console.ReadLine();
+                    Console.WriteLine("j = {0}", j);
+                    for (int k = 0; k < 3; k++)
+                    {
+                        ClearData(parsed);
+                        PlacePools(parsed, sb2, j);
+                        GetMinCap(parsed, true);
+                        //Console.ReadLine();
+                    }
                 }
             }
 
@@ -285,7 +260,7 @@ namespace DatacenterOptimizer
 #endif
         }
 
-        public static void ClearData(Tuple<Datacenter[], Server[], Pool[]> parsed)
+        public static void ClearData(Tuple<Datacenter[], Server[], Pool[]> parsed, bool cleanPlacement = false)
         {
             foreach (var pool in parsed.Item3)
             {
@@ -295,7 +270,33 @@ namespace DatacenterOptimizer
             foreach (var server in parsed.Item2)
             {
                 server.Pool = null;
+#if PLACEMENT
+                if (cleanPlacement)
+                {
+                    server.Datacenter = null;
+                }
+#endif
             }
+
+#if PLACEMENT
+            if (cleanPlacement)
+            {
+                foreach (var dc in parsed.Item1)
+                {
+                    dc.Capacity = 0;
+
+                    for (int index = 0; index < dc.Cells.Length; index++)
+                    {
+                        var server = dc.Cells[index];
+
+                        if (server != null && server.Pool != Pool.EmptyPool)
+                        {
+                            dc.Cells[index] = null;
+                        }
+                    }
+                }
+            }
+#endif
         }
 
         public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2, int limit)
@@ -442,43 +443,48 @@ namespace DatacenterOptimizer
             {
                 double maxTheorical = Math.Truncate(sum/45f);
                 Console.WriteLine("{0} {1}", globalminCap, maxTheorical);
-                var sb = new StringBuilder();
 
-                using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, maxTheorical)))
+                if (globalminCap > 414)
                 {
-                    foreach (var server in parsed.Item2)
-                    {
-                        sb.AppendLine(server.ToString());
-                    }
+                    var sb = new StringBuilder();
 
-                    sw.Write(sb.ToString());
-                }
+                    using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, maxTheorical)))
+                    {
+                        foreach (var server in parsed.Item2)
+                        {
+                            sb.AppendLine(server.ToString());
+                        }
+
+                        sw.Write(sb.ToString());
+                    }
 
 #if BITMAP
-                int width = dcs[0].Cells.Length*10, height = dcs.Length*10;
+                    int width = dcs[0].Cells.Length*10, height = dcs.Length*10;
 
-                resbm = new Bitmap(width, height);
+                    resbm = new Bitmap(width, height);
 
-                using (Graphics graphics = Graphics.FromImage(resbm))
-                {
-                    graphics.FillRectangle(Brushes.Black, 0, 0, width, height);
-
-                    for (int i = 0; i < parsed.Item1.Length; i++)
+                    using (Graphics graphics = Graphics.FromImage(resbm))
                     {
-                        Datacenter datacenter = parsed.Item1[i];
-                        List<Server> servers = datacenter.Cells.Distinct().ToList();
+                        graphics.FillRectangle(Brushes.Black, 0, 0, width, height);
 
-                        for (int j = 0; j < servers.Count; j++)
+                        for (int i = 0; i < parsed.Item1.Length; i++)
                         {
-                            var server = servers[j];
+                            Datacenter datacenter = parsed.Item1[i];
+                            List<Server> servers = datacenter.Cells.Distinct().ToList();
 
-                            graphics.FillRectangle(Server.GetColor(server), server.Position*10, i*10, 10*server.Size, 10);
+                            foreach (var server in servers)
+                            {
+                                if (server != null)
+                                {
+                                    graphics.FillRectangle(Server.GetColor(server), server.Position * 10, i * 10, 10 * server.Size, 10);
+                                }
+                            }
                         }
                     }
-                }
 
-                resbm.Save(string.Format("Visu_{0}_{1}.png", globalminCap, maxTheorical), ImageFormat.Png);
+                    resbm.Save(string.Format("Visu_{0}_{1}.png", globalminCap, maxTheorical), ImageFormat.Png);
 #endif
+                }
             }
 
             return Tuple.Create(minPool, res /*dcMinPool*/, resbm);
@@ -535,6 +541,11 @@ namespace DatacenterOptimizer
                 servers[i] = new Server(x, y, i);
             }
 
+            for (int i = 0; i < pools.Length; i++)
+            {
+                pools[i] = new Pool(i);
+            }
+
             return Tuple.Create(datacenters, servers, pools);
         }
 
@@ -542,32 +553,47 @@ namespace DatacenterOptimizer
         {
             // Place servers
 #if PLACEMENT
-            while (true)
-            {
-                var maxAvailableChunk = tuple.Item1.Select(d => d.ChunkMax.Value).Max();
-                var datacenterWithMaxChunk = tuple.Item1.First(d => d.ChunkMax.Value == maxAvailableChunk);
-                var availableServers = tuple.Item2.Where(s => s.Datacenter == null && s.Size <= maxAvailableChunk);
+            // Best Fit
+            List<Tuple<Datacenter, int, int>> chunks =
+                (tuple.Item1.SelectMany(datacenter => datacenter.Chunks,
+                    (datacenter, chunk) => Tuple.Create(datacenter, chunk.Key, chunk.Value))).ToList();
 
-                if (!availableServers.Any())
+            var serversByRatio = tuple.Item2.OrderByDescending(s => s.Ratio);
+
+            foreach (var server in serversByRatio)
+            {
+                IEnumerable<Tuple<Datacenter, int, int>> available = chunks.Where(c => c.Item3 >= server.Size).OrderByDescending(c => c.Item3);
+
+                if (!available.Any())
                 {
-                    break;
+                    continue;
                 }
 
-                var maxAvailableCapacity = availableServers.Max(s => s.Ratio);
-                Server server = availableServers.FirstOrDefault(s => s.Ratio == maxAvailableCapacity);
+#if EQUILIBRATE
+                List<Datacenter> dcAvailable = available.Select(c => c.Item1).ToList();
+                int dcMinCap = dcAvailable.Min(dc => dc.Capacity);
+                Datacenter dcToUse = dcAvailable.Where(dc => dc.Capacity == dcMinCap).Random();
+                available = available.Where(c => c.Item1 == dcToUse);
+#endif
 
-                if (server == null)
+                IEnumerable<Tuple<Datacenter, int, int>> perfectFit = available.Where(c => c.Item3 == server.Size);
+
+                if (perfectFit.Any())
                 {
-                    break;
-                }
+                    Tuple<Datacenter, int, int> chunk = perfectFit.Random();
 
-                datacenterWithMaxChunk.SetServer(server);
-                sb2.AppendFormat("Server {0} placed\r\n", server.Number);
-            }
-            
-            foreach (Datacenter t in tuple.Item1)
-            {
-                t.ComputeChunks();
+                    chunks.Remove(chunk);
+                    chunk.Item1.SetServer(server, chunk.Item2);
+                }
+                else
+                {
+                    int maxSize = available.First().Item3;
+                    Tuple<Datacenter, int, int> chunk = available.Where(c => c.Item3 == maxSize).Random();
+
+                    chunks.Remove(chunk);
+                    chunk.Item1.SetServer(server, chunk.Item2);
+                    chunks.Add(Tuple.Create(chunk.Item1, chunk.Item2 + server.Size, chunk.Item3 - server.Size));
+                }
             }
 #else
             // Preparse
@@ -610,11 +636,6 @@ namespace DatacenterOptimizer
             Console.WriteLine("Taken capacity: {0}", takenCap);
             Console.WriteLine("Taken size: {0}", takenSize);
             Console.WriteLine("Taken ratio: {0}", takenCap / (double)takenSize);
-
-            for (int i = 0; i < tuple.Item3.Length; i++)
-            {
-                tuple.Item3[i] = new Pool(i);
-            }
         }
     }
 
