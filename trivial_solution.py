@@ -47,8 +47,8 @@ def allocateServers(datacenter, servers, fitServers):
                 match = True
                 break
         if match:
-            servers[server['id']]['used'] = True
-            servers[server['id']]['pos'] = location
+            server['used'] = True
+            server['pos'] = location
             for i in range(server['size']):
                 datacenter[location[0]][location[1] + i] = server['id']
 
@@ -59,7 +59,7 @@ def allocateGroups(datacenter, servers, groups):
                         reverse=True)
 
     # fill each group with biggest capacities first until limit
-    for groupIndex, group in enumerate(groups):
+    for groupIndex in range(len(groups)):
         rowList = list()
         while groups[groupIndex] < 400:  # limit
             for server in capServers:
