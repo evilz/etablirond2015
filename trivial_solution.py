@@ -42,7 +42,7 @@ groups = list(0 for i in range(nbgroups))
 # fill each group with biggest capacities first until limit
 for groupIndex in range(nbgroups):
     rowList = list()
-    while groups[groupIndex] < 410: #limit
+    while groups[groupIndex] < 400: #limit
         for server in capServers:
             if server['used'] and server['group'] == -1 and server['datacenter'] not in rowList:
                 selectedServer = server
@@ -58,20 +58,29 @@ def getNextToFit(datacenter, servs, groups):
     #if minCapacity == 0:
     #    minGroup = groups.index(min(groups));
     
-    # Extract biggest server from a row we are not in
+    # Extract biggest server available from the lowest dc we occupy
     maxCap = 0
+    minCap = 10000
+    biggestServerInCap = None
+    
     for row in datacenter:
         biggestServerInCapDc = None
+        capInDc = 0
         maxCapInDc = 0
+        
         for id in set(row):
             if id != Enum.EMPTY and id != Enum.UNUSED:
-                if servs[id]['group'] == -1 and servs[id]['capacity'] > maxCapInDc:
+                if servs[id]['group'] == minGroup:
+                    capInDc += servs[id]['capacity']
+                elif servs[id]['group'] == -1 and servs[id]['capacity'] > maxCapInDc:
                     biggestServerInCapDc = id
                     maxCapInDc = servs[id]['capacity']
                         
-        if maxCap < maxCapInDc and biggestServerInCapDc != None:
-            biggestServerInCap = biggestServerInCapDc
-            maxCap = maxCapInDc
+        if capInDc < minCap and biggestServerInCapDc != None:
+            minCap = capInDc
+            if maxCapInDc > maxCap:
+                biggestServerInCap = biggestServerInCapDc
+                maxCap = maxCapInDc
             
     return minGroup, biggestServerInCap
 
