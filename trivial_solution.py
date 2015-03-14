@@ -93,11 +93,10 @@ def getNextToFit(datacenter, servs, groups):
                     biggestServerInCapDc = id
                     maxCapInDc = servs[id]['capacity']
 
-        if capInDc < minCap and biggestServerInCapDc is not None:
+        if capInDc < minCap and biggestServerInCapDc is not None and maxCapInDc > maxCap:
             minCap = capInDc
-            if maxCapInDc > maxCap:
-                biggestServerInCap = biggestServerInCapDc
-                maxCap = maxCapInDc
+            biggestServerInCap = biggestServerInCapDc
+            maxCap = maxCapInDc
 
     return minGroup, biggestServerInCap
 
