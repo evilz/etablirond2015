@@ -265,10 +265,10 @@ namespace DatacenterOptimizer
 
             PlaceServers(parsed, sb2);
 
-            for (int j = 390; j < 410; j++)
+            for (int j = 390; j < 430; j++)
             {
                 Console.WriteLine("j = {0}", j);
-                for (int i = 0; i < 50; i++)
+                for (int i = 0; i < 2; i++)
                 {
                     ClearData(parsed);
                     PlacePools(parsed, sb2, j);
@@ -440,11 +440,11 @@ namespace DatacenterOptimizer
 
             if (write)
             {
-                float maxTheorical = sum/45f;
+                double maxTheorical = Math.Truncate(sum/45f);
                 Console.WriteLine("{0} {1}", globalminCap, maxTheorical);
                 var sb = new StringBuilder();
 
-                using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, Math.Truncate(maxTheorical))))
+                using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, maxTheorical)))
                 {
                     foreach (var server in parsed.Item2)
                     {
@@ -477,7 +477,7 @@ namespace DatacenterOptimizer
                     }
                 }
 
-                resbm.Save("Visu_" + globalminCap + ".png", ImageFormat.Png);
+                resbm.Save(string.Format("Visu_{0}_{1}.png", globalminCap, maxTheorical), ImageFormat.Png);
 #endif
             }
 

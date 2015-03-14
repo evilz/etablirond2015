@@ -42,7 +42,7 @@ groups = list(0 for i in range(nbgroups))
 # fill each group with biggest capacities first until limit
 for groupIndex in range(nbgroups):
     rowList = list()
-    while groups[groupIndex] < 400: #limit
+    while groups[groupIndex] < 405: #limit
         for server in capServers:
             if server['used'] and server['group'] == -1 and server['datacenter'] not in rowList:
                 selectedServer = server
@@ -75,12 +75,12 @@ def getNextToFit(datacenter, servs, groups):
                 elif servs[id]['group'] == -1 and servs[id]['capacity'] > maxCapInDc:
                     biggestServerInCapDc = id
                     maxCapInDc = servs[id]['capacity']
-                        
-        if capInDc < minCap and biggestServerInCapDc != None:
+        
+        # Put random in here (it can be equal to another one)        
+        if capInDc < minCap and biggestServerInCapDc != None and maxCapInDc > maxCap:
             minCap = capInDc
-            if maxCapInDc > maxCap:
-                biggestServerInCap = biggestServerInCapDc
-                maxCap = maxCapInDc
+            biggestServerInCap = biggestServerInCapDc
+            maxCap = maxCapInDc
             
     return minGroup, biggestServerInCap
 
