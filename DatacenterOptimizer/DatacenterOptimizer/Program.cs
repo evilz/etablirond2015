@@ -3,7 +3,7 @@
 //#define BITMAP
 #define EQUILIBRATE
 //#define DESEQUILIBRATE
-//#define NEWALGO // Pool selection
+#define NEWALGO // Pool selection
 
 using System;
 using System.Collections.Generic;
@@ -43,6 +43,7 @@ namespace DatacenterOptimizer
         {
             Capacity = p.Capacity;
             Path.AddRange(p.Path);
+            Delta = p.Delta;
         }
 
         public void AddServer(Server s, bool isDelta = false)
@@ -58,7 +59,7 @@ namespace DatacenterOptimizer
 
         public Tuple<Status, int> Score(int target)
         {
-            int score = Capacity - target;
+            int score = (Capacity - Delta.Capacity) - target;
             var status = score < 0 ? Status.Completing : (score == 0 ? Status.Completed : Status.Overload);
 
             if (score < 0 && score > -6)
@@ -75,7 +76,7 @@ namespace DatacenterOptimizer
 
         public bool IsTarget(int target)
         {
-            return Capacity == target;
+            return (Capacity - Delta.Capacity) == target;
         }
     }
 
@@ -287,20 +288,20 @@ namespace DatacenterOptimizer
             var sb2 = new StringBuilder();
             Tuple<Datacenter[], Server[], Pool[]> parsed = Parse();
 
-            //for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 3; i++)
             {
 #if PLACEMENT
                 ClearData(parsed, true);
 #endif
                 PlaceServers(parsed, sb2);
 
-                for (int j = 422; j < 423; j++)
+                for (int j = 420; j < 422; j++)
                 {
                     //for (int k = 400; k < 401; k++)
                     //{
                     //Console.Write("j = {0}, k = {1}: ", j, k);
                     Console.Write("j = {0}: ", j);
-                    //for (int l = 0; l < 2000; l++)
+                    for (int l = 0; l < 30; l++)
                     {
                         ClearData(parsed);
                         PlacePools(parsed, sb2, j); //, k, 3);
@@ -324,6 +325,8 @@ namespace DatacenterOptimizer
             foreach (var pool in parsed.Item3)
             {
                 pool.Capacity = 0;
+                pool.Delta = null;
+                pool.Path.Clear();
             }
 
             foreach (var server in parsed.Item2)
@@ -362,25 +365,51 @@ namespace DatacenterOptimizer
         {
             // Place pools
 #if NEWALGO
-            foreach (var pool in parsed.Item3)
+            try
             {
-                // Delta selection
-                Server delta =
-                    parsed.Item2.Where(s => s != null && s.Pool == null && s.Datacenter != null)
-                        .OrderByDescending(s => s.Capacity)
-                        .First();
-
-                pool.AddServer(delta, true);
-
-                var servers = FindPath(parsed, limit1, pool);
-
-                foreach (var server in servers)
+                foreach (var pool in parsed.Item3)
                 {
-                    server.Pool = pool;
-                    pool.Capacity += server.Capacity;
+                    //Console.Write("Pool n°{0}: ", pool.Number);
+
+                    // Delta selection
+                    Server delta =
+                        parsed.Item2.Where(s => s != null && s.Pool == null && s.Datacenter != null)
+                            .OrderByDescending(s => s.Capacity)
+                            .First();
+
+                    pool.AddServer(delta, true);
+
+                    List<Server> servers = FindPath(parsed, limit1, pool, 25);//null; // To benchmark
+                    /*
+                    int currentDelta = 1000;
+
+                    for (int i = 10; i < 20; i++)
+                    {
+                        var tmp = FindPath(parsed, limit1, pool, i);
+                        int newDelta = Math.Abs(tmp.Sum(s => s.Capacity) - pool.Delta.Capacity - limit1);
+
+                        if (newDelta < currentDelta)
+                        {
+                            servers = tmp;
+                            currentDelta = newDelta;
+                        }
+                    }*/
+
+                    foreach (var server in servers)
+                    {
+                        server.Pool = pool;
+                        pool.Capacity += server.Capacity;
+                    }
+
+                    //Console.WriteLine("done.");
                 }
             }
-#else
+            catch (Exception)
+            {
+                // Skip
+            }
+#endif
+
             for (int i = 0; i < parsed.Item3.Length; i++)
             {
                 Pool pool = parsed.Item3[i];
@@ -428,28 +457,44 @@ namespace DatacenterOptimizer
                 sb2.AppendFormat("Server {0} assigned to pool {1}\r\n", server.Number, selectedPool.Number);
 #endif
             }
+
             //DumpPoolStatus(parsed);
             //Console.ReadLine();
-#endif
         }
 
-        private static List<Server> FindPath(Tuple<Datacenter[], Server[], Pool[]> parsed, int limit1, Pool pool)
+        private static List<Server> FindPath(Tuple<Datacenter[], Server[], Pool[]> parsed, int limit1, Pool pool, int tries)
         {
-            int tries = 5;
             var poolPaths = new List<Pool> {pool};
             var scoringDico = new Dictionary<Pool, int>();
+            var toAdd = new List<Pool>();
 
             while (tries > 0)
             {
+                toAdd.Clear();
+
                 foreach (var poolPath in poolPaths)
                 {
-                    var toAdd = new List<Pool>();
-                    var servers =
+                    IEnumerable<Server> servers =
                         parsed.Item2.Where(
                             s =>
-                                s != null && s.Pool == null && s.Datacenter != null && !poolPath.Path.Contains(s) &&
-                                poolPath.Path.Where(s2 => s2.Datacenter == s.Datacenter).Sum(s3 => s3.Capacity) + s.Capacity >
-                                limit1 + 3);
+                                s != null && s.Pool == null && s.Datacenter != null && !poolPath.Path.Contains(s) && s.Datacenter != poolPath.Delta.Datacenter &&
+                                poolPath.Path.Where(s2 => s2.Datacenter == s.Datacenter).Sum(s3 => s3.Capacity) + s.Capacity <= poolPath.Delta.Capacity).OrderByDescending(s => s.Capacity);
+                    
+                    Server first = servers.FirstOrDefault();
+
+                    if (first == null)
+                    {
+                        break;
+                    }
+
+                    var rndServer = servers.Where(s => s.Capacity == first.Capacity).Random();
+
+                    if (limit1 - pool.Capacity >= pool.Delta.Capacity && first.Capacity <= pool.Delta.Capacity)
+                    {
+                        pool.AddServer(rndServer);
+                        toAdd.Add(pool);
+                        continue;
+                    }
 
                     foreach (var server in servers)
                     {
@@ -472,9 +517,16 @@ namespace DatacenterOptimizer
 
                         toAdd.Add(poolToAdd);
                     }
-
-                    tries--;
                 }
+
+                tries--;
+                poolPaths.Clear();
+                poolPaths.AddRange(toAdd);
+            }
+
+            if (!scoringDico.Any())
+            {
+                throw new Exception("Skip");
             }
 
             int maxScore = scoringDico.Max(p => p.Value);
