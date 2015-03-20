@@ -288,28 +288,28 @@ namespace DatacenterOptimizer
             var sb2 = new StringBuilder();
             Tuple<Datacenter[], Server[], Pool[]> parsed = Parse();
 
-            for (int i = 0; i < 3; i++)
+            //for (int i = 0; i < 20; i++)
             {
 #if PLACEMENT
                 ClearData(parsed, true);
 #endif
                 PlaceServers(parsed, sb2);
 
-                for (int j = 420; j < 422; j++)
+                //for (int j = 420; j < 423; j++)
                 {
                     //for (int k = 400; k < 401; k++)
                     //{
                     //Console.Write("j = {0}, k = {1}: ", j, k);
-                    Console.Write("j = {0}: ", j);
-                    for (int l = 0; l < 30; l++)
+                    //Console.Write("j = {0}: ", j);
+                    for (int l = 0; l < 10; l++)
                     {
                         ClearData(parsed);
-                        PlacePools(parsed, sb2, j); //, k, 3);
+                        PlacePools(parsed, sb2, 420); //, k, 3);
                         GetMinCap(parsed, true);
-                        //Console.ReadLine();
                     }
                     //}
                 }
+                Console.ReadLine();
             }
 
 #if DEBUG
@@ -364,7 +364,7 @@ namespace DatacenterOptimizer
         public static void PlacePools(Tuple<Datacenter[], Server[], Pool[]> parsed, StringBuilder sb2, int limit1)//, int limit2, int pivot)
         {
             // Place pools
-#if NEWALGO
+#if NEWALGO // Try to integrate this part after preselection
             try
             {
                 foreach (var pool in parsed.Item3)
@@ -628,7 +628,7 @@ namespace DatacenterOptimizer
             if (write)
             {
                 double maxTheorical = Math.Truncate(sum/45f);
-                Console.WriteLine("{0} {1}", globalminCap, maxTheorical);
+                Console.WriteLine("Garanteed capacity: {0}, theorical maximum {1}", globalminCap, maxTheorical);
 
                 if (globalminCap > 414)
                 {
