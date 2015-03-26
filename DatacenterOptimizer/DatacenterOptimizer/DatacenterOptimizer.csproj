@@ -63,6 +63,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Datacenter.cs" />
     <Compile Include="DeadCell.cs" />
     <Compile Include="Row.cs" />
     <Compile Include="EnumerableExtensions.cs" />

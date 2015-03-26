@@ -23,20 +23,20 @@ namespace DatacenterOptimizer
 		public static void Main()
 		{
 			var sb2 = new StringBuilder();
-			Tuple<Row[], Server[], Pool[]> parsed = Parse();
+			var datacenter = Parse();
 
 			{
 #if PLACEMENT
-				ClearData(parsed, true);
+				ClearData(datacenter, true);
 #endif
-				PlaceServers(parsed, sb2);
+				PlaceServers(datacenter, sb2);
 
 				{
 					for (int l = 0; l < 10; l++)
 					{
-						ClearData(parsed);
-						PlacePools(parsed, sb2, 420);
-						GetMinCap(parsed, true);
+						ClearData(datacenter);
+						PlacePools(datacenter, sb2, 420);
+						GetMinCap(datacenter, true);
 					}
 
 				}
@@ -51,16 +51,16 @@ namespace DatacenterOptimizer
 #endif
 		}
 
-		public static void ClearData(Tuple<Row[], Server[], Pool[]> parsed, bool cleanPlacement = false)
+		public static void ClearData(Datacenter datacenter, bool cleanPlacement = false)
 		{
-			foreach (var pool in parsed.Item3)
+			foreach (var pool in datacenter.Pools)
 			{
 				pool.Capacity = 0;
 				pool.Delta = null;
 				pool.Path.Clear();
 			}
 
-			foreach (var server in parsed.Item2)
+			foreach (var server in datacenter.Servers)
 			{
 				server.Pool = null;
 				if (cleanPlacement)
@@ -71,7 +71,7 @@ namespace DatacenterOptimizer
 
 			if (cleanPlacement)
 			{
-				foreach (var row in parsed.Item1)
+				foreach (var row in datacenter.Rows)
 				{
 					for (int index = 0; index < row.Cells.Length; index++)
 					{
@@ -86,23 +86,23 @@ namespace DatacenterOptimizer
 			}
 		}
 
-		public static void PlacePools(Tuple<Row[], Server[], Pool[]> parsed, StringBuilder sb2, int limit1)//, int limit2, int pivot)
+		public static void PlacePools(Datacenter datacenter, StringBuilder sb2, int limit1)//, int limit2, int pivot)
 		{
 			// Place pools
 #if NEWALGO // Try to integrate this part after preselection
 			try
 			{
-				foreach (var pool in parsed.Item3)
+				foreach (var pool in datacenter.Pools)
 				{
 					// Delta selection
 					Server delta =
-						parsed.Item2.Where(s => s != null && s.Pool == null && s.Row != null)
+						datacenter.Servers.Where(s => s != null && s.Pool == null && s.Row != null)
 							.OrderByDescending(s => s.Capacity)
 							.First();
 
 					pool.AddServer(delta, true);
 
-					List<Server> servers = FindPath(parsed, limit1, pool, 25);
+					List<Server> servers = FindPath(datacenter, limit1, pool, 25);
 
 					foreach (var server in servers)
 					{
@@ -117,15 +117,15 @@ namespace DatacenterOptimizer
 			}
 #endif
 
-			for (int i = 0; i < parsed.Item3.Length; i++)
+			for (int i = 0; i < datacenter.Pools.Length; i++)
 			{
-				Pool pool = parsed.Item3[i];
+				Pool pool = datacenter.Pools[i];
 				int limit = limit1;
 
 				while (pool.Capacity < limit)
 				{
 					Server server =
-						parsed.Item2.Where(
+						datacenter.Servers.Where(
 							s =>
 								s != null && s.Pool == null && s.Row != null &&
 								s.Row.Cells.All(s2 => s2 != null && s2.Pool != pool))
@@ -144,14 +144,14 @@ namespace DatacenterOptimizer
 
 			while (true)
 			{
-				var availableServers = parsed.Item2.Where(s => s != null && s.Pool == null && s.Row != null);
+				var availableServers = datacenter.Servers.Where(s => s != null && s.Pool == null && s.Row != null);
 
 				if (!availableServers.Any())
 				{
 					break;
 				}
 
-				Tuple<Pool, Server, Bitmap> res = GetMinCap(parsed);
+				Tuple<Pool, Server, Bitmap> res = GetMinCap(datacenter);
 				Pool selectedPool = res.Item1;
 				Server server = res.Item2;
 
@@ -167,7 +167,7 @@ namespace DatacenterOptimizer
 			//Console.ReadLine();
 		}
 
-		private static List<Server> FindPath(Tuple<Row[], Server[], Pool[]> parsed, int limit1, Pool pool, int tries)
+		private static List<Server> FindPath(Datacenter datacenter, int limit1, Pool pool, int tries)
 		{
 			var poolPaths = new List<Pool> { pool };
 			var scoringDico = new Dictionary<Pool, int>();
@@ -181,7 +181,7 @@ namespace DatacenterOptimizer
 				{
 					var path = poolPath;
 					IEnumerable<Server> servers =
-						parsed.Item2.Where(
+						datacenter.Servers.Where(
 							s =>
 								s != null && s.Pool == null && s.Row != null && !path.Path.Contains(s) && s.Row != path.Delta.Row &&
 								path.Path.Where(s2 => s2.Row == s.Row).Sum(s3 => s3.Capacity) + s.Capacity <= path.Delta.Capacity).OrderByDescending(s => s.Capacity);
@@ -260,11 +260,10 @@ namespace DatacenterOptimizer
 			}
 		}
 
-		public static Tuple<Pool, Server, Bitmap> GetMinCap(Tuple<Row[], Server[], Pool[]> parsed,
-			bool write = false)
+		public static Tuple<Pool, Server, Bitmap> GetMinCap(Datacenter datacenter, bool write = false)
 		{
-			Pool[] ps = parsed.Item3;
-			Row[] dcs = parsed.Item1;
+			Pool[] ps = datacenter.Pools;
+			Row[] dcs = datacenter.Rows;
 			int globalminCap = int.MaxValue;
 			Pool minPool = null;
 			Bitmap resbm = null;
@@ -275,9 +274,9 @@ namespace DatacenterOptimizer
 			{
 				int minCap = int.MaxValue;
 
-				Parallel.ForEach(dcs, datacenter =>
+				Parallel.ForEach(dcs, row =>
 				{
-					var cap = dcs.Where(dc => dc != datacenter).Sum(
+					var cap = dcs.Where(dc => dc != row).Sum(
 						dc =>
 							dc.Cells.Where(s => s != null && s.Pool == pool)
 								.Distinct()
@@ -342,7 +341,7 @@ namespace DatacenterOptimizer
 
 					using (var sw = new StreamWriter(string.Format("dc_{0}_{1}.out", globalminCap, maxTheorical)))
 					{
-						foreach (var server in parsed.Item2)
+						foreach (var server in datacenter.Servers)
 						{
 							sb.AppendLine(server.ToString());
 						}
@@ -382,7 +381,7 @@ namespace DatacenterOptimizer
 			return Tuple.Create(minPool, res, resbm);
 		}
 
-		public static Tuple<Row[], Server[], Pool[]> Parse()
+		public static Datacenter Parse()
 		{
 			string[] inputs;
 
@@ -394,18 +393,18 @@ namespace DatacenterOptimizer
 			int index = 0;
 			string input = inputs[index++];
 			string[] data = input.Split();
-			int numberOfDatacenter = int.Parse(data[0]);
+			int numberOfRows = int.Parse(data[0]);
 			int datacenterSize = int.Parse(data[1]);
 			int unavailableSize = int.Parse(data[2]);
 			int poolSize = int.Parse(data[3]);
 			int numberOfServers = int.Parse(data[4]);
-			var datacenters = new Row[numberOfDatacenter];
+			var rows = new Row[numberOfRows];
 			var servers = new Server[numberOfServers];
 			var pools = new Pool[poolSize];
 
-			for (int i = 0; i < numberOfDatacenter; i++)
+			for (int i = 0; i < numberOfRows; i++)
 			{
-				datacenters[i] = new Row(datacenterSize, i);
+				rows[i] = new Row(datacenterSize, i);
 			}
 
 			for (int i = 0; i < unavailableSize; i++)
@@ -415,13 +414,13 @@ namespace DatacenterOptimizer
 				int x = int.Parse(data[0]);
 				int y = int.Parse(data[1]);
 
-				datacenters[x].SetUnavailable(y);
+				rows[x].SetUnavailable(y);
 			}
 
 			// Compute chunks
-			for (int i = 0; i < numberOfDatacenter; i++)
+			for (int i = 0; i < numberOfRows; i++)
 			{
-				datacenters[i].ComputeChunks();
+				rows[i].ComputeChunks();
 			}
 
 			for (int i = 0; i < numberOfServers; i++)
@@ -438,17 +437,17 @@ namespace DatacenterOptimizer
 				pools[i] = new Pool(i);
 			}
 
-			return Tuple.Create(datacenters, servers, pools);
+			return new Datacenter(rows, servers, pools);
 		}
 
-		public static void PlaceServers(Tuple<Row[], Server[], Pool[]> parsed, StringBuilder sb2)
+		public static void PlaceServers(Datacenter datacenter, StringBuilder sb2)
 		{
 			// Place servers
 #if PLACEMENT
 			// Best Fit
 			List<Tuple<Row, int, int>> chunks =
-				(parsed.Item1.SelectMany(datacenter => datacenter.Chunks,
-					(datacenter, chunk) => Tuple.Create(datacenter, chunk.Key, chunk.Value))).ToList();
+				(datacenter.Rows.SelectMany(r => r.Chunks,
+					(r, chunk) => Tuple.Create(r, chunk.Key, chunk.Value))).ToList();
 #if DESEQUILIBRATE
             List<Server> serverList = parsed.Item2.OrderByDescending(s => s.Ratio).ToList();
             
@@ -485,7 +484,7 @@ namespace DatacenterOptimizer
                 }
             }
 #else
-			var serversByRatio = parsed.Item2.OrderByDescending(s => s.Ratio).ThenByDescending(s => s.Size);
+			var serversByRatio = datacenter.Servers.OrderByDescending(s => s.Ratio).ThenByDescending(s => s.Size);
 
 			foreach (var server in serversByRatio)
 			{
@@ -548,16 +547,16 @@ namespace DatacenterOptimizer
 #endif
 
 			// PKI
-			int allCap = parsed.Item2.Sum(s => s.Capacity);
-			int allSize = parsed.Item2.Sum(s => s.Size);
+			int allCap = datacenter.Servers.Sum(s => s.Capacity);
+			int allSize = datacenter.Servers.Sum(s => s.Size);
 
-			Console.WriteLine("Global count: {0}", parsed.Item2.Length);
+			Console.WriteLine("Global count: {0}", datacenter.Servers.Length);
 			Console.WriteLine("Global capacity: {0}", allCap);
 			Console.WriteLine("Global size: {0}", allSize);
 			Console.WriteLine("Global ratio: {0}", allCap / (double)allSize);
 
 
-			var taken = parsed.Item2.Where(s => s.Row != null).ToArray();
+			var taken = datacenter.Servers.Where(s => s.Row != null).ToArray();
 			int takenCap = taken.Sum(s => s.Capacity);
 			int takenSize = taken.Sum(s => s.Size);
 
