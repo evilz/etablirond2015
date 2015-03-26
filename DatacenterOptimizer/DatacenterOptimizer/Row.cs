@@ -77,5 +77,18 @@ namespace DatacenterOptimizer
 				Cells[pos + i] = s;
 			}
 		}
+
+		public void Clean()
+		{
+			for (int index = 0; index < Cells.Length; index++)
+			{
+				var server = Cells[index];
+
+				if (server != null && server.Pool != Pool.EmptyPool)
+				{
+					Cells[index] = null;
+				}
+			}
+		}
 	}
 }

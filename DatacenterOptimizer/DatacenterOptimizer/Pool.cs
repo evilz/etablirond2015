@@ -64,5 +64,12 @@ namespace DatacenterOptimizer
 		{
 			return (Capacity - Delta.Capacity) == target;
 		}
+
+		public void Clean()
+		{
+			Capacity = 0;
+			Delta = null;
+			Path.Clear();
+		}
 	}
 }

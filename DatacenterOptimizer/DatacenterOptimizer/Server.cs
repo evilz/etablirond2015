@@ -21,6 +21,15 @@ namespace DatacenterOptimizer
 			Ratio = capacity/(double) size;
 		}
 
+		public void Clean(bool cleanPlacement = false)
+		{
+			Pool = null;
+			if (cleanPlacement)
+			{
+				Row = null;
+			}
+		}
+
 		public static Brush GetColor(Server s)
 		{
 			if (s == null || s.Pool == null)

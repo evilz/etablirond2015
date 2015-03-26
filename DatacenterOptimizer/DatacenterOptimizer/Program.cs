@@ -27,14 +27,14 @@ namespace DatacenterOptimizer
 
 			{
 #if PLACEMENT
-				ClearData(datacenter, true);
+				datacenter.ClearData(true);
 #endif
 				PlaceServers(datacenter, sb2);
 
 				{
 					for (int l = 0; l < 10; l++)
 					{
-						ClearData(datacenter);
+						datacenter.ClearData();
 						PlacePools(datacenter, sb2, 420);
 						GetMinCap(datacenter, true);
 					}
@@ -51,41 +51,7 @@ namespace DatacenterOptimizer
 #endif
 		}
 
-		public static void ClearData(Datacenter datacenter, bool cleanPlacement = false)
-		{
-			foreach (var pool in datacenter.Pools)
-			{
-				pool.Capacity = 0;
-				pool.Delta = null;
-				pool.Path.Clear();
-			}
-
-			foreach (var server in datacenter.Servers)
-			{
-				server.Pool = null;
-				if (cleanPlacement)
-				{
-					server.Row = null;
-				}
-			}
-
-			if (cleanPlacement)
-			{
-				foreach (var row in datacenter.Rows)
-				{
-					for (int index = 0; index < row.Cells.Length; index++)
-					{
-						var server = row.Cells[index];
-
-						if (server != null && server.Pool != Pool.EmptyPool)
-						{
-							row.Cells[index] = null;
-						}
-					}
-				}
-			}
-		}
-
+		
 		public static void PlacePools(Datacenter datacenter, StringBuilder sb2, int limit1)//, int limit2, int pivot)
 		{
 			// Place pools
