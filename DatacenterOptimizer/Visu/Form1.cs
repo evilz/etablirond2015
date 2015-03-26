@@ -18,7 +18,7 @@ namespace Visu
             var data = DatacenterOptimizer.Program.Parse();
 
             DatacenterOptimizer.Program.PlaceServers(data, sb2);
-            DatacenterOptimizer.Program.PlacePools(data, sb2);
+            DatacenterOptimizer.Program.PlacePools(data, sb2,420);
             Bitmap image = DatacenterOptimizer.Program.GetMinCap(data, true).Item3;
             pictureBox1.Size = new Size(image.Width, image.Height);
             pictureBox1.Image = image;
