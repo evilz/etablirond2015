@@ -12,11 +12,12 @@ namespace DatacenterOptimizer
 			Overload    // Overloaded
 		}
 
-		public static Pool EmptyPool = new Pool(-1);
-		public int Number;
-		public int Capacity;
-		public Server Delta;
-		public List<Server> Path; 
+		public static readonly Pool EmptyPool = new Pool(-1);
+		public int Number { get; }
+		public List<Server> Path { get; }
+
+		public int Capacity { get; set; }
+		public Server Delta { get; set; }
 
 		public Pool(int number)
 		{
