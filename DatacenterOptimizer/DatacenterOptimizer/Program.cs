@@ -63,33 +63,27 @@ namespace DatacenterOptimizer
 			foreach (var server in parsed.Item2)
 			{
 				server.Pool = null;
-#if PLACEMENT
 				if (cleanPlacement)
 				{
 					server.Row = null;
 				}
-#endif
 			}
 
-#if PLACEMENT
 			if (cleanPlacement)
 			{
-				foreach (var dc in parsed.Item1)
+				foreach (var row in parsed.Item1)
 				{
-					dc.Capacity = 0;
-
-					for (int index = 0; index < dc.Cells.Length; index++)
+					for (int index = 0; index < row.Cells.Length; index++)
 					{
-						var server = dc.Cells[index];
+						var server = row.Cells[index];
 
 						if (server != null && server.Pool != Pool.EmptyPool)
 						{
-							dc.Cells[index] = null;
+							row.Cells[index] = null;
 						}
 					}
 				}
 			}
-#endif
 		}
 
 		public static void PlacePools(Tuple<Row[], Server[], Pool[]> parsed, StringBuilder sb2, int limit1)//, int limit2, int pivot)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DatacenterOptimizer
 {
@@ -7,7 +8,17 @@ namespace DatacenterOptimizer
 		public Server[] Cells { get; }
 		public Dictionary<int, int> Chunks { get; }
 		public int Number { get; }
-		public int Capacity { get; set; }
+
+
+		public int Capacity
+		{
+			get { return Servers.Sum(s => s.Capacity); }
+		}
+
+		private IEnumerable<Server> Servers
+		{
+			get { return Cells.Where(s => s != null && !s.IsDeadCell()); }
+		}
 
 		public Row(int size, int number)
 		{
@@ -16,9 +27,10 @@ namespace DatacenterOptimizer
 			Number = number;
 		}
 
+
 		public void SetUnavailable(int index)
 		{
-			Cells[index] = new Server(1, -1, -1) { Pool = Pool.EmptyPool, Position = index };
+			Cells[index] = new DeadCell(index) ;
 		}
 
 		public void ComputeChunks()
@@ -59,8 +71,7 @@ namespace DatacenterOptimizer
 		{
 			s.Row = this;
 			s.Position = pos;
-			Capacity += s.Capacity;
-
+			
 			for (int i = 0; i < s.Size; i++)
 			{
 				Cells[pos + i] = s;
