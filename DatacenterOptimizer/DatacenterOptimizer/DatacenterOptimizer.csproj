@@ -63,7 +63,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Datacenter.cs" />
+    <Compile Include="Row.cs" />
     <Compile Include="EnumExtensions.cs" />
     <Compile Include="Pool.cs" />
     <Compile Include="Program.cs" />

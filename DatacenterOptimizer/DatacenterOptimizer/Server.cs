@@ -8,7 +8,7 @@ namespace DatacenterOptimizer
 		public int Capacity;
 		public int Size;
 		public Pool Pool;
-		public Datacenter Datacenter;
+		public Row Row;
 		public int Position;
 		public double Ratio;
 
@@ -126,7 +126,7 @@ namespace DatacenterOptimizer
 
 		public new string ToString()
 		{
-			return Datacenter == null ? "x" : string.Format("{0} {1} {2}", Datacenter.Number, Position, Pool.Number);
+			return Row == null ? "x" : string.Format("{0} {1} {2}", Row.Number, Position, Pool.Number);
 		}
 	}
 }

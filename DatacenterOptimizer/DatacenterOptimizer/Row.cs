@@ -2,29 +2,23 @@ using System.Collections.Generic;
 
 namespace DatacenterOptimizer
 {
-	public class Datacenter
+	public class Row
 	{
-		public readonly Server[] Cells;
-		public Dictionary<int, int> Chunks;
-		public Pool Pool;
-		public int Number;
-		public int Capacity;
-		public int AvailableSlot;
+		public Server[] Cells { get; }
+		public Dictionary<int, int> Chunks { get; }
+		public int Number { get; }
+		public int Capacity { get; set; }
 
-		public Datacenter(int size, int number)
+		public Row(int size, int number)
 		{
 			Cells = new Server[size];
 			Chunks = new Dictionary<int, int>();
 			Number = number;
-			AvailableSlot = size;
 		}
 
 		public void SetUnavailable(int index)
 		{
-			var s = new Server(1, -1, -1) {Pool = Pool.EmptyPool, Position = index};
-
-			Cells[index] = s;
-			AvailableSlot--;
+			Cells[index] = new Server(1, -1, -1) { Pool = Pool.EmptyPool, Position = index };
 		}
 
 		public void ComputeChunks()
@@ -35,7 +29,7 @@ namespace DatacenterOptimizer
 			int counterStart = 0;
 			int index = 0;
 
-			foreach (Server server in Cells)
+			foreach (var server in Cells)
 			{
 				if (server == null)
 				{
@@ -63,10 +57,9 @@ namespace DatacenterOptimizer
 
 		public void SetServer(Server s, int pos)
 		{
-			s.Datacenter = this;
+			s.Row = this;
 			s.Position = pos;
 			Capacity += s.Capacity;
-			AvailableSlot -= s.Size;
 
 			for (int i = 0; i < s.Size; i++)
 			{
