@@ -4,14 +4,14 @@ using System.Linq;
 
 namespace DatacenterOptimizer
 {
-	public static class EnumExtensions
+	public static class EnumerableExtensions
 	{
-		private static readonly Random Rnd = new Random();
+		private static readonly Random _rnd = new Random();
 
 		public static T Random<T>(this IEnumerable<T> list)
 		{
 			var enumerable = list as T[] ?? list.ToArray();
-			return enumerable.ElementAt(Rnd.Next(enumerable.Count()));
+			return enumerable.ElementAt(_rnd.Next(enumerable.Count()));
 		}
 	}
 }

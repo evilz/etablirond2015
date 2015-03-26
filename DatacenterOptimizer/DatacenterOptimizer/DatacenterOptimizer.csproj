@@ -64,7 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Row.cs" />
-    <Compile Include="EnumExtensions.cs" />
+    <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="Pool.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
