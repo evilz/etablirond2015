@@ -4,13 +4,14 @@ namespace DatacenterOptimizer
 {
 	public class Server
 	{
-		public int Number;
-		public int Capacity;
-		public int Size;
-		public Pool Pool;
-		public Row Row;
-		public int Position;
-		public double Ratio;
+		public int Number { get; }
+		public int Capacity { get; }
+		public int Size { get; }
+		public double Ratio { get; }
+
+		public Pool Pool { get; set; }
+		public Row Row { get; set; }
+		public int Position { get; set; }
 
 		public Server(int size, int capacity, int number)
 		{
